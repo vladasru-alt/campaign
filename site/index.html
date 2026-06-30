@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Генератор кода размещения</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f4f5f7;
+    margin: 0;
+    padding: 40px 16px;
+    color: #1a1a1a;
+  }
+  .card {
+    max-width: 640px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 24px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 6px;
+    margin-top: 18px;
+  }
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid #d0d3d8;
+    border-radius: 8px;
+    background: #fff;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  select:focus {
+    outline: none;
+    border-color: #3366ff;
+  }
+  .result-block {
+    margin-top: 28px;
+  }
+  .result-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  #result {
+    flex: 1;
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    border: 1px solid #d0d3d8;
+    border-radius: 8px;
+    background: #f9fafb;
+    color: #111;
+  }
+  button {
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    background: #3366ff;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:hover { background: #2952cc; }
+  button.copied { background: #1aa260; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Генератор кода размещения</h1>
+
+  <label for="channel">Канал</label>
+  <select id="channel"></select>
+
+  <label for="surface">Поверхность</label>
+  <select id="surface"></select>
+
+  <label for="product">Продукт</label>
+  <select id="product"></select>
+
+  <label for="stage">Стадия</label>
+  <select id="stage"></select>
+
+  <div class="result-block">
+    <label for="result">Результат</label>
+    <div class="result-row">
+      <input id="result" type="text" readonly>
+      <button id="copyBtn">Копировать</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PRODUCTS = [
+  ["Корп. карты", "CORPCARD"],
+  ["Payroll lite", "PAYROLL_LITE"],
+  ["1С Direct Bank", "1C_DB"],
+  ["СБП QR", "FPS_C2B"],
+  ["СБП B2C", "FPS_B2C"],
+  ["СБП B2B", "FPS_B2B"],
+  ["IPS", "PIGGY_BANK"],
+  ["ACQUIRING POS", "ACQ_POS"],
+  ["INTERNET ACQ", "ACQ_ECOM"],
+  ["Единый налоговый счет", "ENS"],
+  ["Онлайн Бухгалтерия", "ONL_ACC"],
+  ["Сервис Штрафов", "FINES"],
+  ["Налоговая Копилка", "TAXES_BANK"],
+  ["Электронный документооборот", "EDO"],
+  ["Другое", "OTHER"],
+  ["Модуль Зарп. Проекта", "PAYROLL_MODULE"],
+  ["1C Смартегра", "SMARTEGRA"],
+  ["ВЭД Трансгран", "OVERSEAS_PAYMENT"],
+  ["ВЭД Вал. контроль", "CURRENCY_CONTROL"],
+  ["Спец счета", "SPECIAL_ACC_TFO"],
+  ["Гарантия 44-223ФЗ", "TFO_G_44_223"],
+  ["Гарантия НДС", "TFO_G_VAT"],
+  ["Гарантия Платежная", "TFO_G_PAYMENT"],
+  ["Гарантия Арендная", "TFO_G_RENT"],
+  ["Гарантия Исполнения Контракта", "TFO_G_PERFORMANCE"],
+  ["ADM", "ADM"],
+  ["Payroll Classic", "PAYROLL"],
+  ["API", "API"],
+  ["Единое Казначейство", "SINGLE_TREASURY"],
+];
+
+const STAGES = [
+  ["Awareness", "AWRN"],
+  ["Think", "THINK"],
+  ["Qualified Lead", "QL"],
+  ["Технический онбординг", "TECH"],
+  ["Онбординг", "ONB"],
+  ["Retention", "RETENTION"],
+  ["Engagement", "ENG"],
+  ["RE-activation", "REACT"],
+  ["Upsell", "UPSELL"],
+];
+
+const CHANNELS = [
+  ["RBO", "RBO"],
+  ["RBM", "RBM"],
+  ["EMAIL", "EMAIL"],
+  ["SMS", "SMS"],
+];
+
+const SURFACES = [
+  ["BANNER MAIN", "MAIN"],
+  ["BANNER ACC MAIN", "MAIN_ACC"],
+  ["BANNER IN DROWER", "DROWER_BANNER"],
+  ["POP-UP", "POPUP"],
+  ["TOASTER (RBO PUSH)", "TOASTER"],
+  ["BANNER L", "L"],
+  ["BANNER M", "M"],
+  ["BANNER S", "S"],
+  ["DROWER", "DROWER"],
+  ["LEAD FORM", "LEAD"],
+  ["EMAIL", "_"],
+  ["PUSH", "PUSH"],
+];
+
+function fillSelect(id, items) {
+  const el = document.getElementById(id);
+  items.forEach(([label, value]) => {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    el.appendChild(opt);
+  });
+}
+
+fillSelect("product", PRODUCTS);
+fillSelect("stage", STAGES);
+fillSelect("channel", CHANNELS);
+fillSelect("surface", SURFACES);
+
+function updateResult() {
+  const product = document.getElementById("product").value;
+  const stage = document.getElementById("stage").value;
+  const channel = document.getElementById("channel").value;
+  const surface = document.getElementById("surface").value;
+  document.getElementById("result").value = [channel, surface, product, stage].join("_");
+}
+
+["product", "stage", "channel", "surface"].forEach(id => {
+  document.getElementById(id).addEventListener("change", updateResult);
+});
+
+updateResult();
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const resultInput = document.getElementById("result");
+  resultInput.select();
+  navigator.clipboard.writeText(resultInput.value).then(() => {
+    const btn = document.getElementById("copyBtn");
+    const original = btn.textContent;
+    btn.textContent = "Скопировано!";
+    btn.classList.add("copied");
+    setTimeout(() => {
+      btn.textContent = original;
+      btn.classList.remove("copied");
+    }, 1500);
+  });
+});
+</script>
+</body>
+</html>
