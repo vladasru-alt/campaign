@@ -33,19 +33,41 @@
     margin-bottom: 6px;
     margin-top: 18px;
   }
+  .select-wrap {
+    position: relative;
+  }
+  .select-wrap::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #666;
+  }
   select {
     width: 100%;
-    padding: 10px 12px;
+    padding: 10px 36px 10px 12px;
     font-size: 14px;
     border: 1px solid #d0d3d8;
     border-radius: 8px;
     background: #fff;
     appearance: none;
     -webkit-appearance: none;
+    cursor: pointer;
   }
   select:focus {
     outline: none;
     border-color: #3366ff;
+  }
+  select:disabled {
+    background: #f4f5f7;
+    color: #aaa;
+    cursor: default;
   }
   .result-block {
     margin-top: 28px;
@@ -86,16 +108,16 @@
   <h1>Генератор кода размещения</h1>
 
   <label for="channel">Канал</label>
-  <select id="channel"></select>
+  <div class="select-wrap"><select id="channel"></select></div>
 
   <label for="surface">Поверхность</label>
-  <select id="surface"></select>
+  <div class="select-wrap"><select id="surface"></select></div>
 
   <label for="product">Продукт</label>
-  <select id="product"></select>
+  <div class="select-wrap"><select id="product"></select></div>
 
   <label for="stage">Стадия</label>
-  <select id="stage"></select>
+  <div class="select-wrap"><select id="stage"></select></div>
 
   <div class="result-block">
     <label for="result">Результат</label>
@@ -158,23 +180,32 @@ const CHANNELS = [
   ["SMS", "SMS"],
 ];
 
-const SURFACES = [
-  ["BANNER MAIN", "MAIN"],
-  ["BANNER ACC MAIN", "MAIN_ACC"],
-  ["BANNER IN DROWER", "DROWER_BANNER"],
-  ["POP-UP", "POPUP"],
-  ["TOASTER (RBO PUSH)", "TOASTER"],
-  ["BANNER L", "L"],
-  ["BANNER M", "M"],
-  ["BANNER S", "S"],
-  ["DROWER", "DROWER"],
-  ["LEAD FORM", "LEAD"],
-  ["EMAIL", "_"],
-  ["PUSH", "PUSH"],
-];
+const SURFACES_BY_CHANNEL = {
+  RBO: [
+    ["BANNER MAIN", "MAIN"],
+    ["BANNER ACC MAIN", "MAIN_ACC"],
+    ["BANNER IN DROWER", "DROWER_BANNER"],
+    ["POP-UP", "POPUP"],
+    ["TOASTER (RBO PUSH)", "TOASTER"],
+    ["DROWER", "DROWER"],
+    ["LEAD FORM", "LEAD"],
+  ],
+  RBM: [
+    ["BANNER L", "L"],
+    ["BANNER M", "M"],
+    ["BANNER S", "S"],
+    ["PUSH", "PUSH"],
+    ["LEAD FORM", "LEAD"],
+  ],
+  EMAIL: [
+    ["EMAIL", "_"],
+  ],
+  SMS: [],
+};
 
 function fillSelect(id, items) {
   const el = document.getElementById(id);
+  el.innerHTML = "";
   items.forEach(([label, value]) => {
     const opt = document.createElement("option");
     opt.value = value;
@@ -183,24 +214,33 @@ function fillSelect(id, items) {
   });
 }
 
-fillSelect("product", PRODUCTS);
-fillSelect("stage", STAGES);
-fillSelect("channel", CHANNELS);
-fillSelect("surface", SURFACES);
+function updateSurfaces() {
+  const channel = document.getElementById("channel").value;
+  const surfaces = SURFACES_BY_CHANNEL[channel] || [];
+  const surfaceEl = document.getElementById("surface");
+  fillSelect("surface", surfaces);
+  surfaceEl.disabled = surfaces.length === 0;
+  updateResult();
+}
 
 function updateResult() {
-  const product = document.getElementById("product").value;
-  const stage = document.getElementById("stage").value;
   const channel = document.getElementById("channel").value;
   const surface = document.getElementById("surface").value;
+  const product = document.getElementById("product").value;
+  const stage = document.getElementById("stage").value;
   document.getElementById("result").value = [channel, surface, product, stage].join("_");
 }
 
-["product", "stage", "channel", "surface"].forEach(id => {
+fillSelect("product", PRODUCTS);
+fillSelect("stage", STAGES);
+fillSelect("channel", CHANNELS);
+
+document.getElementById("channel").addEventListener("change", updateSurfaces);
+["product", "stage", "surface"].forEach(id => {
   document.getElementById(id).addEventListener("change", updateResult);
 });
 
-updateResult();
+updateSurfaces();
 
 document.getElementById("copyBtn").addEventListener("click", () => {
   const resultInput = document.getElementById("result");
